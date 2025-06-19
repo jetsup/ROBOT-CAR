@@ -1,0 +1,31 @@
+name: PlatformIO Build
+
+on:
+    push:
+        branches:
+            - master
+    pull_request:
+        branches:
+            - master
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v2
+
+            - name: Set up Python
+              uses: actions/setup-python@v2
+              with:
+                  python-version: "3.10"
+
+            - name: Set up PlatformIO
+              run: python3 -m pip install platformio
+
+            - name: Install platformIO dependencies
+              run: platformio pkg install
+
+            - name: Build firmware
+              run: platformio run

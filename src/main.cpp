@@ -2,67 +2,94 @@
 #include <RH_ASK.h>
 #include <SPI.h>
 
+#include "motors.hpp"
+
 // Data pin is connected to pin 11
 RH_ASK driver;
 
-uint8_t en1Pin = 5;
-uint8_t in1Pin = 4;
-uint8_t in2Pin = 3;
+String receivedMessage;
+
+unsigned long lastDataReceiveTime = 0;
 
 void setup() {
   Serial.begin(115200);
   while (!Serial) {
   }
 
-  pinMode(en1Pin, OUTPUT);
+  pinMode(enAPin, OUTPUT);
   pinMode(in1Pin, OUTPUT);
   pinMode(in2Pin, OUTPUT);
+
+  pinMode(enBPin, OUTPUT);
+  pinMode(in3Pin, OUTPUT);
+  pinMode(in4Pin, OUTPUT);
 
   // Initialize the RH_ASK driver
   if (!driver.init()) {
     Serial.println("RH_ASK initialization failed");
-    while (1)
-      ; // Halt if initialization fails
+    while (1);  // Halt if initialization fails
   } else {
     Serial.println("RH_ASK initialized successfully");
   }
 
   // Set the driver to idle mode
   driver.setModeIdle();
+
+  // Stop the motors
+  driveLeftMotor(0, 0);
+  driveRightMotor(0, 0);
 }
 
 void loop() {
   if (driver.available()) {
+    lastDataReceiveTime = millis();
     uint8_t buf[RH_ASK_MAX_MESSAGE_LEN];
     uint8_t len = sizeof(buf);
 
     if (driver.recv(buf, &len)) {
-      String receivedMessage = String((char *)buf).substring(0, len);
+      receivedMessage = String((char *)buf).substring(0, len);
 
-      // Received message: "1 109"
-      bool motorDirectionForward = receivedMessage.substring(0, 1) == "1";
-      int motorSpeed = receivedMessage.substring(2).toInt();
+      // Received message:
+      // "LDleft_directionLSleft_speedRDright_directionRSright_speed" e.g.
+      // "LD1LS100RD-1RS50" means LeftMotor is forward at speed 100, RightMotor
+      // is backward at speed 50 direction ZERO means stop
 
-      Serial.print("Motor Direction: ");
-      Serial.print(motorDirectionForward ? "'Forward'" : "'Backward'");
-      Serial.print(" Motor Speed: ");
-      Serial.println(motorSpeed);
+      leftMotorDirection = receivedMessage
+                               .substring(receivedMessage.indexOf("LD") + 2,
+                                          receivedMessage.indexOf("LS"))
+                               .toInt();
+      leftMotorSpeed = receivedMessage
+                           .substring(receivedMessage.indexOf("LS") + 2,
+                                      receivedMessage.indexOf("RD"))
+                           .toInt();
+      rightMotorDirection = receivedMessage
+                                .substring(receivedMessage.indexOf("RD") + 2,
+                                           receivedMessage.indexOf("RS"))
+                                .toInt();
+      rightMotorSpeed =
+          receivedMessage.substring(receivedMessage.indexOf("RS") + 2).toInt();
 
-      if (motorSpeed > 20) {
-        if (motorDirectionForward) {
-          digitalWrite(in1Pin, HIGH);
-          digitalWrite(in2Pin, LOW);
-        } else {
-          digitalWrite(in1Pin, LOW);
-          digitalWrite(in2Pin, HIGH);
-        }
-      } else {
-        digitalWrite(in1Pin, LOW);
-        digitalWrite(in2Pin, LOW);
-      }
-      analogWrite(en1Pin, motorSpeed);
+      Serial.print("Received: '");
+      Serial.println(receivedMessage);
+
+      driveLeftMotor(leftMotorDirection, leftMotorSpeed);
+      driveRightMotor(rightMotorDirection, rightMotorSpeed);
     } else {
       Serial.println("Receive failed");
     }
+  } else {
+    // No data available, stop motors
+    if (millis() - lastDataReceiveTime > 500) {
+      leftMotorDirection = 0;
+      rightMotorDirection = 0;
+      leftMotorSpeed = 0;
+      rightMotorSpeed = 0;
+
+      driveLeftMotor(0, 0);
+      driveRightMotor(0, 0);
+    }
   }
+
+  digitalWrite(enAPin, leftMotorSpeed);
+  digitalWrite(enBPin, rightMotorSpeed);
 }

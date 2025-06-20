@@ -5,14 +5,27 @@
 // Data pin is connected to pin 11
 RH_ASK driver;
 
-uint8_t en1Pin = 9;
+// if compiling for Arduino Uno, use the following pins
+#if defined(ARDUINO_AVR_UNO)
+uint8_t enAPin = 9;
 uint8_t in1Pin = 4;
 uint8_t in2Pin = 3;
 
-uint8_t en2Pin = 6;
+uint8_t enBPin = 6;
 uint8_t in3Pin = 7;
 uint8_t in4Pin = 8;
+#elif defined(ARDUINO_ESP32_DEV)
+uint8_t enAPin = 25;
+uint8_t in1Pin = 26;
+uint8_t in2Pin = 27;
 
+uint8_t enBPin = 14;
+uint8_t in3Pin = 12;
+uint8_t in4Pin = 13;
+#else
+// Default pins or an error if no specific board is defined
+#error "Unsupported board! Please define pins for this board."
+#endif
 String receivedMessage;
 int8_t leftMotorDirection, rightMotorDirection;
 int leftMotorSpeed, rightMotorSpeed;
@@ -22,11 +35,11 @@ void setup() {
   while (!Serial) {
   }
 
-  pinMode(en1Pin, OUTPUT);
+  pinMode(enAPin, OUTPUT);
   pinMode(in1Pin, OUTPUT);
   pinMode(in2Pin, OUTPUT);
 
-  pinMode(en2Pin, OUTPUT);
+  pinMode(enBPin, OUTPUT);
   pinMode(in3Pin, OUTPUT);
   pinMode(in4Pin, OUTPUT);
 
@@ -48,12 +61,6 @@ void loop() {
     uint8_t len = sizeof(buf);
 
     if (driver.recv(buf, &len)) {
-      Serial.print("Raw received: [");
-      for (int i = 0; i < len; i++) {
-        Serial.print((char)buf[i]);
-      }
-      Serial.println("]");
-
       receivedMessage = String((char *)buf).substring(0, len);
 
       // Received message:
@@ -106,8 +113,19 @@ void loop() {
     } else {
       Serial.println("Receive failed");
     }
+  } else {
+    // No data available, stop motors
+    leftMotorDirection = 0;
+    rightMotorDirection = 0;
+    leftMotorSpeed = 0;
+    rightMotorSpeed = 0;
+
+    digitalWrite(in1Pin, LOW);
+    digitalWrite(in2Pin, LOW);
+    digitalWrite(in3Pin, LOW);
+    digitalWrite(in4Pin, LOW);
   }
 
-  digitalWrite(en1Pin, leftMotorSpeed);
-  digitalWrite(en2Pin, rightMotorSpeed);
+  digitalWrite(enAPin, leftMotorSpeed);
+  digitalWrite(enBPin, rightMotorSpeed);
 }

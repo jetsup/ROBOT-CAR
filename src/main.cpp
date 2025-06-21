@@ -16,6 +16,8 @@ void setup() {
   pinMode(in3Pin, OUTPUT);
   pinMode(in4Pin, OUTPUT);
 
+  pinMode(ROBOT_INBUILT_LED_PIN, OUTPUT);
+
   // Initialize the RH_ASK driver
   if (!driver.init()) {
     Serial.println("Radio initialization failed");
@@ -53,6 +55,8 @@ void setup() {
 
 void loop() {
   if (driver.available()) {
+    digitalWrite(ROBOT_INBUILT_LED_PIN, HIGH);
+
     lastDataReceiveTime = millis();
     uint8_t buf[MAX_RECV_MESSAGE_LENGTH];
     uint8_t len = sizeof(buf);
@@ -100,4 +104,6 @@ void loop() {
       driveRightMotor(0, 0);
     }
   }
+
+  digitalWrite(ROBOT_INBUILT_LED_PIN, LOW);
 }

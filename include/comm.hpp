@@ -3,6 +3,14 @@
 #include <Arduino.h>
 #include <SPI.h>
 
+#if defined(ARDUINO_AVR_UNO)
+#define ROBOT_INBUILT_LED_PIN 12
+#elif defined(ARDUINO_ESP32_DEV)
+#define ROBOT_INBUILT_LED_PIN 2
+#else
+#error "Unsupported board! Please define the inbuilt LED pin for this board."
+#endif
+
 #define ROBOT_COMM_MODULE_RF433 433
 #define ROBOT_COMM_MODULE_NRF24 24
 

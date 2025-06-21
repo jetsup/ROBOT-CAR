@@ -23,6 +23,8 @@ extern uint8_t in4Pin;
 #error "Unsupported board! Please define pins for this board."
 #endif
 
+#define MOTOR_SPIN_THRESHOLD_SPEED 20
+
 extern int8_t leftMotorDirection;
 extern int8_t rightMotorDirection;
 extern short leftMotorSpeed;

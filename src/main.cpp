@@ -1,15 +1,7 @@
 #include <Arduino.h>
-#include <RH_ASK.h>
-#include <SPI.h>
 
+#include "comm.hpp"
 #include "motors.hpp"
-
-// Data pin is connected to pin 11
-RH_ASK driver;
-
-String receivedMessage;
-
-unsigned long lastDataReceiveTime = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -26,14 +18,33 @@ void setup() {
 
   // Initialize the RH_ASK driver
   if (!driver.init()) {
-    Serial.println("RH_ASK initialization failed");
+    Serial.println("Radio initialization failed");
     while (1);  // Halt if initialization fails
   } else {
-    Serial.println("RH_ASK initialized successfully");
+    Serial.println("Radio initialized successfully");
   }
 
+#if ROBOT_COMM_MODULE == ROBOT_COMM_MODULE_NRF24
+  if (!driver.setChannel(ROBOT_RADIO_CHANNEL)) {
+    Serial.println("Failed to set radio channel");
+    while (1);  // Halt if setting the channel fails
+  } else {
+    Serial.print("Radio channel set to: '");
+    Serial.print(CONTROLLER_RADIO_CHANNEL);
+    Serial.println("'");
+  }
+
+  if (!driver.setRF(RH_NRF24::DataRate250kbps, RH_NRF24::TransmitPower0dBm)) {
+    Serial.println("Failed to set data rate and power");
+  } else {
+    Serial.println("Data rate set to 250kbps and power to 0dBm");
+  }
+#endif
+
+#if ROBOT_COMM_MODULE == ROBOT_COMM_MODULE_RF433
   // Set the driver to idle mode
   driver.setModeIdle();
+#endif
 
   // Stop the motors
   driveLeftMotor(0, 0);
@@ -43,7 +54,7 @@ void setup() {
 void loop() {
   if (driver.available()) {
     lastDataReceiveTime = millis();
-    uint8_t buf[RH_ASK_MAX_MESSAGE_LEN];
+    uint8_t buf[MAX_RECV_MESSAGE_LENGTH];
     uint8_t len = sizeof(buf);
 
     if (driver.recv(buf, &len)) {
@@ -89,7 +100,4 @@ void loop() {
       driveRightMotor(0, 0);
     }
   }
-
-  digitalWrite(enAPin, leftMotorSpeed);
-  digitalWrite(enBPin, rightMotorSpeed);
 }

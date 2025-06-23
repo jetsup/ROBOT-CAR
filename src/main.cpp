@@ -3,8 +3,6 @@
 #include "comm.hpp"
 #include "motors.hpp"
 
-const byte address[6] = "00001";
-
 void setup() {
   Serial.begin(115200);
   while (!Serial) {

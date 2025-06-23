@@ -1,9 +1,9 @@
 #include "motors.hpp"
 
 #if defined(ARDUINO_AVR_UNO)
-uint8_t enAPin = 9;
+uint8_t enAPin = 3;
 uint8_t in1Pin = 4;
-uint8_t in2Pin = 3;
+uint8_t in2Pin = 2;
 
 uint8_t enBPin = 6;
 uint8_t in3Pin = 7;

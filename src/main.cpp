@@ -97,6 +97,8 @@ void loop() {
           receivedMessage.substring(receivedMessage.indexOf("H") + 1).toInt() ==
           1;
 
+      Serial.print(millis());
+      Serial.print(" - ");
       Serial.print("Received: '");
       Serial.print(receivedMessage);
       Serial.println("'");

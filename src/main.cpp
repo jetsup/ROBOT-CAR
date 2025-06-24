@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "comm.hpp"
+#include "functionalities.hpp"
 #include "motors.hpp"
 
 void setup() {
@@ -19,6 +20,7 @@ void setup() {
   pinMode(in4Pin, OUTPUT);
 
   pinMode(ROBOT_INBUILT_LED_PIN, OUTPUT);
+  pinMode(ROBOT_BUZZER_PIN, OUTPUT);
 
   // Initialize the RH_ASK driver
 #if ROBOT_COMM_MODULE == ROBOT_COMM_MODULE_RF433
@@ -71,9 +73,9 @@ void loop() {
       receivedMessage = String((char *)buf).substring(0, len);
 
       // Received message:
-      // "LDleft_directionLSleft_speedRDright_directionRSright_speed" e.g.
-      // "LD1LS100RD-1RS50" means LeftMotor is forward at speed 100, RightMotor
-      // is backward at speed 50 direction ZERO means stop
+      // "LDleft_directionLSleft_speedRDright_directionRSright_speedHisHooting"
+      // e.g. "LD1LS100RD-1RS50H0" means LeftMotor is forward at speed 100,
+      // RightMotor is backward at speed 50 direction ZERO means stop
 
       leftMotorDirection = receivedMessage
                                .substring(receivedMessage.indexOf("LD") + 2,
@@ -87,12 +89,24 @@ void loop() {
                                 .substring(receivedMessage.indexOf("RD") + 2,
                                            receivedMessage.indexOf("RS"))
                                 .toInt();
-      rightMotorSpeed =
-          receivedMessage.substring(receivedMessage.indexOf("RS") + 2).toInt();
+      rightMotorSpeed = receivedMessage
+                            .substring(receivedMessage.indexOf("RS") + 2,
+                                       receivedMessage.indexOf("H"))
+                            .toInt();
+      isHooting =
+          receivedMessage.substring(receivedMessage.indexOf("H") + 1).toInt() ==
+          1;
 
       Serial.print("Received: '");
       Serial.print(receivedMessage);
       Serial.println("'");
+
+      if (leftMotorDirection == -1 && rightMotorDirection == -1) {
+        // If both motors are set to reverse, enable the buzzer
+        isReversing = true;
+      } else {
+        isReversing = false;
+      }
 
       driveLeftMotor(leftMotorDirection, leftMotorSpeed);
       driveRightMotor(rightMotorDirection, rightMotorSpeed);
@@ -115,4 +129,6 @@ void loop() {
   }
 
   digitalWrite(ROBOT_INBUILT_LED_PIN, LOW);
+  reverseBeep();
+  hoot();
 }

@@ -2,8 +2,11 @@
 
 #include <Arduino.h>
 
+#define ROBOT_HOOT_MINIMUM_TIME 1000
+
 #if defined(ARDUINO_AVR_UNO)
 #define ROBOT_INBUILT_LED_PIN 2
+#define ROBOT_BUZZER_PIN A0
 #elif defined(ARDUINO_ESP32_DEV)
 #define ROBOT_INBUILT_LED_PIN 2
 #else

@@ -9,6 +9,7 @@
 #define ROBOT_BUZZER_PIN A0
 #elif defined(ARDUINO_ESP32_DEV)
 #define ROBOT_INBUILT_LED_PIN 2
+#define ROBOT_BUZZER_PIN 4
 #else
 #error "Unsupported board! Please define the inbuilt LED pin for this board."
 #endif

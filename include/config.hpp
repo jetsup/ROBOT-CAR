@@ -29,8 +29,8 @@
 #define RF433_DATA_PIN 11
 #define RF433_TX_PIN 2
 #elif defined(ARDUINO_ESP32_DEV)
-#define RF433_DATA_PIN 21
-#define RF433_TX_PIN 22
+#define RF433_DATA_PIN 16
+#define RF433_TX_PIN 17
 #else
 #error \
     "Unsupported board! Please define RF433_DATA_PIN and RF433_TX_PIN for this board."

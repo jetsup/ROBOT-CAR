@@ -1,12 +1,15 @@
 #include <Arduino.h>
 
 #include "comm.hpp"
+#include "functionalities.hpp"
 #include "motors.hpp"
 
 void setup() {
   Serial.begin(115200);
   while (!Serial) {
   }
+  Serial.println("Robot Communication Module Setup");
+  delay(500);
 
   pinMode(enAPin, OUTPUT);
   pinMode(in1Pin, OUTPUT);
@@ -17,9 +20,14 @@ void setup() {
   pinMode(in4Pin, OUTPUT);
 
   pinMode(ROBOT_INBUILT_LED_PIN, OUTPUT);
+  pinMode(ROBOT_BUZZER_PIN, OUTPUT);
 
   // Initialize the RH_ASK driver
+#if ROBOT_COMM_MODULE == ROBOT_COMM_MODULE_RF433
   if (!driver.init()) {
+#elif ROBOT_COMM_MODULE == ROBOT_COMM_MODULE_NRF24
+  if (!driver.begin()) {
+#endif  // ROBOT_COMM_MODULE
     Serial.println("Radio initialization failed");
     while (1);  // Halt if initialization fails
   } else {
@@ -27,20 +35,12 @@ void setup() {
   }
 
 #if ROBOT_COMM_MODULE == ROBOT_COMM_MODULE_NRF24
-  if (!driver.setChannel(ROBOT_RADIO_CHANNEL)) {
-    Serial.println("Failed to set radio channel");
-    while (1);  // Halt if setting the channel fails
-  } else {
-    Serial.print("Radio channel set to: '");
-    Serial.print(CONTROLLER_RADIO_CHANNEL);
-    Serial.println("'");
-  }
-
-  if (!driver.setRF(RH_NRF24::DataRate250kbps, RH_NRF24::TransmitPower0dBm)) {
-    Serial.println("Failed to set data rate and power");
-  } else {
-    Serial.println("Data rate set to 250kbps and power to 0dBm");
-  }
+  driver.openReadingPipe(0, address);
+  // The lowest data rate value for more stable communication
+  driver.setDataRate(RF24_250KBPS);
+  driver.setPALevel(RF24_PA_MIN);
+  // Set module as receiver
+  driver.startListening();
 #endif
 
 #if ROBOT_COMM_MODULE == ROBOT_COMM_MODULE_RF433
@@ -58,16 +58,24 @@ void loop() {
     digitalWrite(ROBOT_INBUILT_LED_PIN, HIGH);
 
     lastDataReceiveTime = millis();
+#if ROBOT_COMM_MODULE == ROBOT_COMM_MODULE_RF433
     uint8_t buf[MAX_RECV_MESSAGE_LENGTH];
+#elif ROBOT_COMM_MODULE == ROBOT_COMM_MODULE_NRF24
+    char buf[MAX_RECV_MESSAGE_LENGTH] = {0};
+#endif  // ROBOT_COMM_MODULE
     uint8_t len = sizeof(buf);
 
+#if ROBOT_COMM_MODULE == ROBOT_COMM_MODULE_RF433
     if (driver.recv(buf, &len)) {
+#elif ROBOT_COMM_MODULE == ROBOT_COMM_MODULE_NRF24
+    driver.read(&buf, len);
+#endif  // ROBOT_COMM_MODULE
       receivedMessage = String((char *)buf).substring(0, len);
 
       // Received message:
-      // "LDleft_directionLSleft_speedRDright_directionRSright_speed" e.g.
-      // "LD1LS100RD-1RS50" means LeftMotor is forward at speed 100, RightMotor
-      // is backward at speed 50 direction ZERO means stop
+      // "LDleft_directionLSleft_speedRDright_directionRSright_speedHisHooting"
+      // e.g. "LD1LS100RD-1RS50H0" means LeftMotor is forward at speed 100,
+      // RightMotor is backward at speed 50 direction ZERO means stop
 
       leftMotorDirection = receivedMessage
                                .substring(receivedMessage.indexOf("LD") + 2,
@@ -81,17 +89,34 @@ void loop() {
                                 .substring(receivedMessage.indexOf("RD") + 2,
                                            receivedMessage.indexOf("RS"))
                                 .toInt();
-      rightMotorSpeed =
-          receivedMessage.substring(receivedMessage.indexOf("RS") + 2).toInt();
+      rightMotorSpeed = receivedMessage
+                            .substring(receivedMessage.indexOf("RS") + 2,
+                                       receivedMessage.indexOf("H"))
+                            .toInt();
+      isHooting =
+          receivedMessage.substring(receivedMessage.indexOf("H") + 1).toInt() ==
+          1;
 
+      Serial.print(millis());
+      Serial.print(" - ");
       Serial.print("Received: '");
-      Serial.println(receivedMessage);
+      Serial.print(receivedMessage);
+      Serial.println("'");
+
+      if (leftMotorDirection == -1 && rightMotorDirection == -1) {
+        // If both motors are set to reverse, enable the buzzer
+        isReversing = true;
+      } else {
+        isReversing = false;
+      }
 
       driveLeftMotor(leftMotorDirection, leftMotorSpeed);
       driveRightMotor(rightMotorDirection, rightMotorSpeed);
+#if ROBOT_COMM_MODULE == ROBOT_COMM_MODULE_RF433
     } else {
       Serial.println("Receive failed");
     }
+#endif
   } else {
     // No data available, stop motors
     if (millis() - lastDataReceiveTime > 500) {
@@ -106,4 +131,6 @@ void loop() {
   }
 
   digitalWrite(ROBOT_INBUILT_LED_PIN, LOW);
+  reverseBeep();
+  hoot();
 }

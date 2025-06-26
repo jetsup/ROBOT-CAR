@@ -27,48 +27,30 @@ short leftMotorSpeed = 0;
 short rightMotorSpeed = 0;
 
 void driveLeftMotor(int8_t direction, int speed) {
-  // #if defined(ARDUINO_AVR_UNO)
-  //   if (speed >= 120) {
-  // #endif
   if (direction == 1) {
     digitalWrite(in1Pin, HIGH);
     digitalWrite(in2Pin, LOW);
   } else if (direction == -1) {
     digitalWrite(in1Pin, LOW);
     digitalWrite(in2Pin, HIGH);
-  } else if (direction == 0 && speed >= 120) {
+  } else if (direction == 0 && speed >= MOTOR_SPIN_THRESHOLD_SPEED) {
     digitalWrite(in1Pin, HIGH);
     digitalWrite(in2Pin, LOW);
   } else {
     digitalWrite(in1Pin, LOW);
     digitalWrite(in2Pin, LOW);
   }
-  // #if defined(ARDUINO_AVR_UNO)
-  //   } else {
-  //     // If speed is less than 120, stop the motor
-  //     digitalWrite(in1Pin, LOW);
-  //     digitalWrite(in2Pin, LOW);
-  //   }
-  // #endif
 
-  analogWrite(enAPin, speed);
+  analogWrite(enAPin, speed >= MOTOR_SPIN_THRESHOLD_SPEED ? speed : 0);
 }
 
 void driveRightMotor(int8_t direction, int speed) {
-  // #if defined(ARDUINO_AVR_UNO)
-  //   if (speed >= 120) {
-  // #endif
   if (direction == 1) {
     digitalWrite(in3Pin, HIGH);
     digitalWrite(in4Pin, LOW);
   } else if (direction == -1) {
     digitalWrite(in3Pin, LOW);
     digitalWrite(in4Pin, HIGH);
-    // #if defined(ARDUINO_AVR_UNO)
-    //     } else if (direction == 0 && speed >= 120) {
-    // #elif defined(ARDUINO_ESP32_DEV)
-    //   } else if (direction == 0 && speed >= MOTOR_SPIN_THRESHOLD_SPEED) {
-    // #endif
   } else if (direction == 0 && speed >= MOTOR_SPIN_THRESHOLD_SPEED) {
     digitalWrite(in3Pin, HIGH);
     digitalWrite(in4Pin, LOW);
@@ -76,19 +58,6 @@ void driveRightMotor(int8_t direction, int speed) {
     digitalWrite(in3Pin, LOW);
     digitalWrite(in4Pin, LOW);
   }
-  // #if defined(ARDUINO_AVR_UNO)
-  //   } else {
-  //     // If speed is less than 120, stop the motor
-  //     digitalWrite(in3Pin, LOW);
-  //     digitalWrite(in4Pin, LOW);
-  //   }
-  // #endif
 
-  // #if defined(ARDUINO_AVR_UNO)
-  //   digitalWrite(enBPin, speed > 120 ? speed : LOW);
-  // #elif defined(ARDUINO_ESP32_DEV)
-  analogWrite(enBPin, speed);
-  // #else
-  // #error "Unsupported board! Please define the correct pin mode for PWM."
-  // #endif
+  analogWrite(enBPin, speed >= MOTOR_SPIN_THRESHOLD_SPEED ? speed : 0);
 }

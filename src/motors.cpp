@@ -33,12 +33,14 @@ void driveLeftMotor(int8_t direction, int speed) {
   } else if (direction == -1) {
     digitalWrite(in1Pin, LOW);
     digitalWrite(in2Pin, HIGH);
-  } else if (direction == 0 && speed >= MOTOR_SPIN_THRESHOLD_SPEED) {
-    digitalWrite(in1Pin, HIGH);
-    digitalWrite(in2Pin, LOW);
-  } else {
-    digitalWrite(in1Pin, LOW);
-    digitalWrite(in2Pin, LOW);
+  } else if (direction == 0) {
+    if (speed >= MOTOR_SPIN_THRESHOLD_SPEED) {
+      digitalWrite(in1Pin, LOW);
+      digitalWrite(in2Pin, HIGH);
+    } else {
+      digitalWrite(in1Pin, LOW);
+      digitalWrite(in2Pin, LOW);
+    }
   }
 
   analogWrite(enAPin, speed >= MOTOR_SPIN_THRESHOLD_SPEED ? speed : 0);
@@ -51,12 +53,14 @@ void driveRightMotor(int8_t direction, int speed) {
   } else if (direction == -1) {
     digitalWrite(in3Pin, LOW);
     digitalWrite(in4Pin, HIGH);
-  } else if (direction == 0 && speed >= MOTOR_SPIN_THRESHOLD_SPEED) {
-    digitalWrite(in3Pin, HIGH);
-    digitalWrite(in4Pin, LOW);
-  } else {
-    digitalWrite(in3Pin, LOW);
-    digitalWrite(in4Pin, LOW);
+  } else if (direction == 0) {
+    if (speed >= MOTOR_SPIN_THRESHOLD_SPEED) {
+      digitalWrite(in3Pin, LOW);
+      digitalWrite(in4Pin, HIGH);
+    } else {
+      digitalWrite(in3Pin, LOW);
+      digitalWrite(in4Pin, LOW);
+    }
   }
 
   analogWrite(enBPin, speed >= MOTOR_SPIN_THRESHOLD_SPEED ? speed : 0);

@@ -29,7 +29,12 @@ void setup() {
   if (!driver.begin()) {
 #endif  // ROBOT_COMM_MODULE
     Serial.println("Radio initialization failed");
-    while (1);  // Halt if initialization fails
+    while (1) {  // Halt if initialization fails
+      digitalWrite(ROBOT_INBUILT_LED_PIN, HIGH);
+      delay(500);
+      digitalWrite(ROBOT_INBUILT_LED_PIN, LOW);
+      delay(500);
+    }
   } else {
     Serial.println("Radio initialized successfully");
   }
